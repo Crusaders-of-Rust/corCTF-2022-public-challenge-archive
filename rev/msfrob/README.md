@@ -1,0 +1,9 @@
+Solves: 44
+
+Author: clubby789
+
+Description:
+
+6b0a444558474b460a5a58454d584b470a5f5943444d0a444558474b460a4d464348490a4c5f44495e4345445904
+
+Flag: `corctf{tc4ch3_r3u5e_p1u5_0v3rfl0w_equ4l5_r007}`

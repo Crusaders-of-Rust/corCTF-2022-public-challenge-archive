@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo -e '[\033[5m\e[1;33m!\e[0m] Spawning a shell in a CoRJail...'
+/usr/bin/docker run -it --user user --hostname CoRJail --security-opt seccomp=/etc/docker/corjail.json -v /proc/cormon:/proc_rw/cormon:rw corcontainer
+/usr/sbin/poweroff -f

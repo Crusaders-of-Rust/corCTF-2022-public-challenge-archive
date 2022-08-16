@@ -1,0 +1,2 @@
+- Remove that file containing valuable contents from the Redis container
+- Check environment variables for leaks

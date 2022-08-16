@@ -1,0 +1,120 @@
+diff -ruN a/arch/x86/entry/syscall_64.c b/arch/x86/entry/syscall_64.c
+--- a/arch/x86/entry/syscall_64.c	2022-06-29 08:59:54.000000000 +0200
++++ b/arch/x86/entry/syscall_64.c	2022-07-02 12:34:11.237778657 +0200
+@@ -17,6 +17,9 @@
+ 
+ #define __SYSCALL_64(nr, sym) [nr] = __x64_##sym,
+ 
++DEFINE_PER_CPU(u64 [NR_syscalls], __per_cpu_syscall_count);
++EXPORT_PER_CPU_SYMBOL(__per_cpu_syscall_count);
++
+ asmlinkage const sys_call_ptr_t sys_call_table[__NR_syscall_max+1] = {
+ 	/*
+ 	 * Smells like a compiler bug -- it doesn't work
+diff -ruN a/arch/x86/include/asm/syscall_wrapper.h b/arch/x86/include/asm/syscall_wrapper.h
+--- a/arch/x86/include/asm/syscall_wrapper.h	2022-06-29 08:59:54.000000000 +0200
++++ b/arch/x86/include/asm/syscall_wrapper.h	2022-07-02 12:34:11.237778657 +0200
+@@ -245,7 +245,7 @@
+  * SYSCALL_DEFINEx() -- which is essential for the COND_SYSCALL() and SYS_NI()
+  * macros to work correctly.
+  */
+-#define SYSCALL_DEFINE0(sname)						\
++#define __SYSCALL_DEFINE0(sname)						\
+ 	SYSCALL_METADATA(_##sname, 0);					\
+ 	static long __do_sys_##sname(const struct pt_regs *__unused);	\
+ 	__X64_SYS_STUB0(sname)						\
+diff -ruN a/include/linux/syscalls.h b/include/linux/syscalls.h
+--- a/include/linux/syscalls.h	2022-06-29 08:59:54.000000000 +0200
++++ b/include/linux/syscalls.h	2022-07-02 12:34:11.237778657 +0200
+@@ -82,6 +82,7 @@
+ #include <linux/key.h>
+ #include <linux/personality.h>
+ #include <trace/syscall.h>
++#include <asm/syscall.h>
+ 
+ #ifdef CONFIG_ARCH_HAS_SYSCALL_WRAPPER
+ /*
+@@ -202,8 +203,8 @@
+ }
+ #endif
+ 
+-#ifndef SYSCALL_DEFINE0
+-#define SYSCALL_DEFINE0(sname)					\
++#ifndef __SYSCALL_DEFINE0
++#define __SYSCALL_DEFINE0(sname)					\
+ 	SYSCALL_METADATA(_##sname, 0);				\
+ 	asmlinkage long sys_##sname(void);			\
+ 	ALLOW_ERROR_INJECTION(sys_##sname, ERRNO);		\
+@@ -219,9 +220,41 @@
+ 
+ #define SYSCALL_DEFINE_MAXARGS	6
+ 
+-#define SYSCALL_DEFINEx(x, sname, ...)				\
+-	SYSCALL_METADATA(sname, x, __VA_ARGS__)			\
+-	__SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
++DECLARE_PER_CPU(u64[], __per_cpu_syscall_count);
++
++#define SYSCALL_COUNT_DECLAREx(sname, x, ...) \
++	static inline long __count_sys##sname(__MAP(x, __SC_DECL, __VA_ARGS__));
++
++#define __SYSCALL_COUNT(syscall_nr) \
++	this_cpu_inc(__per_cpu_syscall_count[(syscall_nr)])
++
++#define SYSCALL_COUNT_FUNCx(sname, x, ...)					\
++	{									\
++		__SYSCALL_COUNT(__syscall_meta_##sname.syscall_nr);		\
++		return __count_sys##sname(__MAP(x, __SC_CAST, __VA_ARGS__));	\
++	}									\
++	static inline long __count_sys##sname(__MAP(x, __SC_DECL, __VA_ARGS__))
++
++#define SYSCALL_COUNT_DECLARE0(sname) \
++	static inline long __count_sys_##sname(void);
++
++#define SYSCALL_COUNT_FUNC0(sname)					\
++	{								\
++		__SYSCALL_COUNT(__syscall_meta__##sname.syscall_nr);	\
++		return __count_sys_##sname();				\
++	}								\
++	static inline long __count_sys_##sname(void)
++
++#define SYSCALL_DEFINEx(x, sname, ...)			\
++	SYSCALL_METADATA(sname, x, __VA_ARGS__)		\
++	SYSCALL_COUNT_DECLAREx(sname, x, __VA_ARGS__)	\
++	__SYSCALL_DEFINEx(x, sname, __VA_ARGS__)	\
++	SYSCALL_COUNT_FUNCx(sname, x, __VA_ARGS__)
++
++#define SYSCALL_DEFINE0(sname)		\
++	SYSCALL_COUNT_DECLARE0(sname)	\
++	__SYSCALL_DEFINE0(sname)	\
++	SYSCALL_COUNT_FUNC0(sname)
+ 
+ #define __PROTECT(...) asmlinkage_protect(__VA_ARGS__)
+ 
+diff -ruN a/kernel/trace/trace_syscalls.c b/kernel/trace/trace_syscalls.c
+--- a/kernel/trace/trace_syscalls.c	2022-06-29 08:59:54.000000000 +0200
++++ b/kernel/trace/trace_syscalls.c	2022-07-02 12:34:32.902426748 +0200
+@@ -101,7 +101,7 @@
+ 	return NULL;
+ }
+ 
+-static struct syscall_metadata *syscall_nr_to_meta(int nr)
++struct syscall_metadata *syscall_nr_to_meta(int nr)
+ {
+ 	if (IS_ENABLED(CONFIG_HAVE_SPARSE_SYSCALL_NR))
+ 		return xa_load(&syscalls_metadata_sparse, (unsigned long)nr);
+@@ -111,6 +111,7 @@
+ 
+ 	return syscalls_metadata[nr];
+ }
++EXPORT_SYMBOL(syscall_nr_to_meta);
+ 
+ const char *get_syscall_name(int syscall)
+ {
+@@ -122,6 +123,7 @@
+ 
+ 	return entry->name;
+ }
++EXPORT_SYMBOL(get_syscall_name);
+ 
+ static enum print_line_t
+ print_syscall_enter(struct trace_iterator *iter, int flags,

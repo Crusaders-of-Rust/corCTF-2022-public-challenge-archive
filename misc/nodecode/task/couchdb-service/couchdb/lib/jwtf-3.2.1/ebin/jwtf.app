@@ -1,0 +1,12 @@
+{application,jwtf,
+             [{description,"JSON Web Token Functions"},
+              {vsn,"3.2.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,b64url,config,crypto,jiffy,
+                             public_key]},
+              {mod,{jwtf_app,[]}},
+              {env,[]},
+              {modules,[jwtf,jwtf_app,jwtf_keystore,jwtf_sup]},
+              {maintainers,[]},
+              {licenses,[]},
+              {links,[]}]}.

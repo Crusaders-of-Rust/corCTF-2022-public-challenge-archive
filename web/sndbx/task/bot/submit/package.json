@@ -1,0 +1,11 @@
+{
+  "name": "adminbot",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@google-cloud/pubsub": "^2.11.0",
+    "got": "^11.8.2",
+    "mustache": "^4.2.0",
+    "raw-body": "^2.4.1"
+  }
+}

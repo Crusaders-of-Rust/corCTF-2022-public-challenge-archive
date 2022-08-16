@@ -1,0 +1,10 @@
+{application,couch_prometheus,
+             [{description,"Aggregated metrics info for Prometheus consumption"},
+              {vsn,"3.2.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,folsom,couch_stats,couch_log]},
+              {mod,{couch_prometheus_app,[]}},
+              {env,[]},
+              {modules,[couch_prometheus_app,couch_prometheus_http,
+                        couch_prometheus_server,couch_prometheus_sup,
+                        couch_prometheus_util]}]}.

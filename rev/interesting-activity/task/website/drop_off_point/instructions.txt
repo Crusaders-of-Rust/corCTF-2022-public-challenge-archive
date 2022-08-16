@@ -1,0 +1,39 @@
+INSTRUCTIONS
+------------
+
+I have provided you with an android application, a file called "note.txt" and another file called "metadata_old".
+
+The android application is to be ran on the Android 11 phone I have given you.
+The files "note.txt" and "metadata_old" are to be put in the file path "/data/data/com.example.note_taking/cache/".
+
+These files can be inserted via the following method:
+---
+1. Connect your android phone to your PC
+2. Run the following commands on a windows command prompt (wherever adb.exe is)
+	.\adb.exe devices (make sure a device is there)
+	.\adb.exe root
+	.\adb.exe install .\note_taking.apk
+	.\adb.exe push .\note.txt /data/data/com.example.note_taking/cache/note.txt
+	.\adb.exe push .\metadata_old /data/data/com.example.note_taking/cache/metadata_old
+
+---
+
+The encrypted message is stored in "/data/data/com.example.note_taking/cache/note.txt". 
+The decrypted message will be stored in "/data/data/com.example.note_taking/cache/noteOut.txt".
+A script is also sent to you over email, allowing you to actually use the app whilst having root permissions from adb.
+
+> The file "metadata_old" (and "metadata_new" when you've pressed the decrypt button) are there for information purposes and making sure specific files haven't been tampered with - you *need* these files in the directory mentioned above.
+
+Once you've decrypted the message, please encrypt your reply and send the files "note.txt" and "metadata_old" to me, including the password used to encrypt your reply.
+
+Instructions of how to get the required files from your phone:
+---
+1. Connect your device to your PC
+2. Enter the following commands on a windows command prompt (wherever adb.exe is):
+
+    .\adb.exe devices (make sure a device is there)
+    .\adb.exe pull /data/data/com.example.note_taking/cache/note.txt 
+    .\adb.exe pull /data/data/com.example.note_taking/cache/metadata_old 
+---
+
+If your encrypted message contains a 0 (when viewing the hexdump and finding a 00), please change your message - this is a known bug and this will be fixed later.

@@ -1,0 +1,11 @@
+{application,config,
+             [{description,"INI file configuration system for Apache CouchDB"},
+              {vsn,"3.2.1"},
+              {registered,[config,config_event]},
+              {applications,[kernel,stdlib]},
+              {mod,{config_app,[]}},
+              {env,[{sensitive,#{"admins" => all,
+                                 "replicator" => ["password"]}}]},
+              {modules,[config,config_app,config_listener,config_listener_mon,
+                        config_notifier,config_sup,config_util,
+                        config_writer]}]}.

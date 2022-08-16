@@ -1,0 +1,12 @@
+{application,ddoc_cache,
+             [{description,"Design Document Cache"},
+              {vsn,"3.2.1"},
+              {registered,[ddoc_cache_lru,ddoc_cache_opener]},
+              {applications,[kernel,stdlib,crypto,config,couch_event,
+                             couch_log,couch_stats,mem3,fabric]},
+              {mod,{ddoc_cache_app,[]}},
+              {modules,[ddoc_cache,ddoc_cache_app,ddoc_cache_entry,
+                        ddoc_cache_entry_custom,ddoc_cache_entry_ddocid,
+                        ddoc_cache_entry_ddocid_rev,
+                        ddoc_cache_entry_validation_funs,ddoc_cache_lru,
+                        ddoc_cache_opener,ddoc_cache_sup,ddoc_cache_value]}]}.

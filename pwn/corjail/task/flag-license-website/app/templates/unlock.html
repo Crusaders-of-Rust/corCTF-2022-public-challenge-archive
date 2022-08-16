@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flag</title>
+    <link rel="shortcut icon" type=image/ico href=/static/images/favicon.ico>
+    <link rel="stylesheet" href="static/css/38ec85f45423ec52e9d1f2f778e847ed.css">
+  </head>
+  <body>
+    <div class="main">
+      {% for msg in get_flashed_messages() %}
+      <h1 id="flag">{{ msg }}</h3>
+      {% endfor %}
+    </div>
+  </body>
+</html>

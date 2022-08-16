@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+
+  web:
+
+    build: .
+    image: flag-license
+    working_dir: /app
+    entrypoint: python3 /app/app.py

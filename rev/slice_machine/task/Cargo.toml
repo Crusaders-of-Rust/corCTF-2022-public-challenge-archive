@@ -1,0 +1,11 @@
+[package]
+name = "slice_machine"
+version = "1.33.7"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.142", features = ["derive", "rc"] }
+rmp-serde = "1.1.0"
+indicatif = "0.17.0"
+rand = "0.8.5"
+rayon = "1.5.3"

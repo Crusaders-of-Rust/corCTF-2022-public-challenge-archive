@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoR Flag License Purchase Form</title>
+    <link rel="shortcut icon" type=image/ico href=/static/images/favicon.ico>
+    <link rel="stylesheet" href="static/css/1d2e0db7bdadca0cdc47367126aadc25.css">
+    <script type=text/javascript src="static/js/efbd3bc838f31c807a42211a4bce2cd2.js"></script>
+  </head>
+  <body>
+    <form action="purchase" method="post">
+      <h1>CoR Flag License Purchase Form</h1>
+      
+      <div id="logo">
+        <img src="static/images/639ea56cc818bb6c6388719b4bdd1c7a.png" />
+      </div>
+
+      <br/><br/>
+
+      <fieldset>
+        <legend><span class="number">1</span>Select the quantity</legend><br/>
+        
+        <div class="license-left">
+          <img src="static/images/7c6877ac5a9ca7acdcde196ed91c6799.png" />
+        </div>
+        <div class="license-right">
+          <input type="number" class="qty" value="1" min="1" max="1000" placeholder="Quantity" onchange="totalPrice(this.value)">
+          <div class="license-right"></div>
+            <h4 class="price-left">Unit price:</h4><input class="price-right" value="$1337.00/day" readonly>
+            <h4 class="price-left">Total price:</h4><input id="total" value="$1337.00/day" class="price-right" readonly>
+          <div class="license-right"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="number">2</span>Enter your basic information</legend><br/>
+
+        <label for="first_name">First name:</label>
+        <input type="text" name="first_name" placeholder="John" required>
+        <label for="last_name">Last name:</label>
+        <input type="text" name="last_name" placeholder="Doe" required>
+        <label for="dob">Date of birth:</label>
+        <input type="date" name="dob" required>
+        <label for="nickname">Nickname:</label>
+        <input type="text" name="nickname" placeholder="H4cK3rM4N" required>
+        <label for="team_name">Team name:</label>
+        <input type="text" name="team_name" placeholder="SuP3rH4cK3rS" required>
+        <label for="email">Email:</label>
+        <input type="email" name="email" placeholder="user@domain.com" required>
+        <label for="phone">Phone number:</label>
+        <input type="tel" name="phone" placeholder="123-123-1234" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="number">3</span>Enter your bank information</legend><br/>
+        
+        <label for="job">Credit card number:</label>
+        
+        <div class="card-left-1">
+          <input type="tel" placeholder="XXXX-XXXX-XXXX-XXXX" name="card_number" pattern="[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}" required>
+        </div>
+        <div class="card-right-1">
+          <img class="card-right-png" src="static/images/bb5851739df3c7426a0686449cb04974.png">
+        </div>
+
+        <div class="card-left-2">
+          <label for="card_expiration">Expiration:</label>
+          <input type="text" name="card_expiration" placeholder="MM/YY" pattern="(?:0[1-9]|1[0-2])/[0-9]{2}" requireds>
+        </div>
+        <div class="card-right-2">
+          <label for="cvc">CVC:</label>
+          <input type="text" name="cvc" placeholder="XXX" pattern="[0-9]{3}" required>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="number">4</span>Enter your preferences</legend><br/>
+
+        <label for="ctf">Favorite CTF competition:</label>
+        <select name="ctf" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="corCTF">corCTF</option>
+        </select>
+
+        <label for="category">Favorite corCTF 2022 category:</label>
+        <select name="category" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="Pwn">Pwn</option>
+            <option value="Web">Web</option>
+            <option value="Rev">Rev</option>
+            <option value="Crypto">Crypto</option>
+            <option value="Forensics">Forensics</option>
+            <option value="Misc">Misc</option>
+            <option value="Stego">Stego</option>
+            <option value="OSINT">OSINT</option>
+        </select>
+
+        <label for="sponsor">Favorite corCTF 2022 sponsor:</label>
+        <select name="sponsor" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="Google">Google</option>
+            <option value="Fly.io">Fly.io</option>
+            <option value="RET2">RET2</option>
+            <option value="Binary Ninja">Binary Ninja</option>
+            <option value="OtterSec">OtterSec</option>
+            <option value="Hack The Box">Hack The Box</option>
+            <option value="Trail of Bits">Trail of Bits</option>
+        </select>
+        
+        <label for="os">Favorite OS:</label>
+        <select name="os" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="Windows">Windows</option>
+            <option value="MacOS">MacOS</option>
+            <option value="Linux">Linux</option>
+        </select>
+
+        <label for="oss_css">Open-Source Software or Closed-Source Software?</label>
+        <select name="oss_css" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="OSS">Open-Source Software</option>
+            <option value="CSS">Closed-Source Software</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="number">5</span>Enter your CoR Promo Code</legend><br/>
+      
+        <label for="promo">CoR Promo Code:</label>
+        <input type="text" name="promo" placeholder="PROMOCODE" onchange="updateRequirements(this.value);">
+
+        <label for="promo_how">How did you get the CoR Promo Code?</label>
+        <select name="promo_how" id="promo_how">
+            <option value="" disabled selected>Select an option</option>
+            <option value="Website">I found it on a coupon website</option>
+            <option value="Stolen">I stole it</option>
+            <option value="CoRJail">I solved the CoRJail challenge</option>
+            <option value="Corruption">I corrupted a CoR member</option>
+        </select>
+      </fieldset>
+
+      <button type="submit">Purchase</button>
+      </form>
+  </body>
+</html>

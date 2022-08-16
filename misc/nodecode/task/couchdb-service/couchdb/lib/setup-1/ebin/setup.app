@@ -1,0 +1,9 @@
+{application,setup,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,couch_epi,chttpd,couch_log]},
+              {mod,{setup_app,[]}},
+              {env,[]},
+              {modules,[setup,setup_app,setup_epi,setup_httpd,
+                        setup_httpd_handlers,setup_sup]}]}.

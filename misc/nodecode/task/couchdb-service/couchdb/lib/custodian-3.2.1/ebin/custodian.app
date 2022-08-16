@@ -1,0 +1,11 @@
+{application,custodian,
+             [{description,"in your cluster, looking after your stuff"},
+              {vsn,"3.2.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,couch_log,config,couch_event,couch,
+                             mem3]},
+              {mod,{custodian_app,[]}},
+              {env,[]},
+              {modules,[custodian,custodian_app,custodian_db_checker,
+                        custodian_monitor,custodian_noop_monitor,
+                        custodian_server,custodian_sup,custodian_util]}]}.

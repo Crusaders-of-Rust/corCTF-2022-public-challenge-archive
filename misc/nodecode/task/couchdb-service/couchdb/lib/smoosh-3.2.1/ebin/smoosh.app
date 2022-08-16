@@ -1,0 +1,11 @@
+{application,smoosh,
+             [{description,"Auto-compaction daemon"},
+              {vsn,"3.2.1"},
+              {registered,[smoosh_server]},
+              {applications,[kernel,stdlib,couch_log,config,couch_event,couch,
+                             mem3]},
+              {mod,{smoosh_app,[]}},
+              {env,[]},
+              {modules,[smoosh,smoosh_app,smoosh_channel,
+                        smoosh_priority_queue,smoosh_server,smoosh_sup,
+                        smoosh_utils]}]}.

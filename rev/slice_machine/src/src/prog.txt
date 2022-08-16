@@ -1,0 +1,292 @@
+_start:
+    li r7, 16384
+    call 'main
+    halt
+
+main:
+    ; welcome message
+    li r1, 'welcome
+    call 'print
+    li r1, 'enter
+    call 'print
+
+    ; read flag
+    li r1, 8192
+    call 'read
+
+    ; checking message
+    li r1, 'checking
+    call 'print
+
+    li r1, 8192
+    call 'check
+
+    li r0, 0
+    jeq r1, r0, '_main_bad
+_main_good:
+    li r1 'correct
+    jump '_main_done
+_main_bad:
+    li r1 'wrong
+_main_done:
+    call 'print
+    ret
+
+print:
+    li r4, 0
+_print_loop:
+    load r2, r1
+    and r2, 127
+
+    jeq r2, r4, '_print_done
+
+    mov r0, r2
+    out
+    add r1, 7
+    jump '_print_loop
+_print_done:
+    ret
+
+; r1: buffer
+read:
+    li r2, 10
+_read_loop:
+    in
+    jeq r0, r2, '_read_done
+    store r0, r1
+    add r1, 7
+    jump '_read_loop
+_read_done:
+    ret
+
+; r1: buffer
+strlen:
+    li r2, 0 ; val
+    li r3, 127
+    li r4, 0 ; count
+_strlen_loop:
+    load r5, r1
+    and r5, r3
+    jeq r5, r2, '_strlen_done
+    add r1, 7
+    add r4, 1
+    jump '_strlen_loop
+_strlen_done:
+    mov r1, r4
+    ret
+
+check:
+    li r1 'empty
+    call 'print
+
+    li r1, 8192
+    call 'strlen
+
+    li r2, 28
+    jeq r1, r2, '_check1
+    jump '_check_bad
+
+_check1:
+    li r1 'empty
+    call 'print
+
+    li r1, 8192
+    li r2, 'prefix
+    li r3, 7
+    call 'strcmp
+
+    li r0, 1
+    jeq r1, r0, '_check2
+    jump '_check_bad
+
+_check2:
+    li r1 'empty
+    call 'print
+
+    ; last char check
+    li r0, 8381
+    load r1, r0
+    and r1, 127
+    li r0, 125
+
+    jeq r1, r0, '_check3
+    jump '_check_bad
+
+_check3:
+    li r1 'empty
+    call 'print
+
+    call 'copy
+    call 'mutate
+
+    li r1, 12288
+    li r2, 'magic
+    li r3, 182
+    call 'bitcmp
+
+    li r0, 1
+    jeq r1, r0, '_check_good
+
+_check_bad:
+    li r1, 0
+    jump '_check_done
+_check_good:
+    li r1, 1
+_check_done:
+    ret
+
+; r1: a
+; r2: b
+; r3: count
+bitcmp:
+    li r4, 0 ; is wrong
+_bitcmp_loop:
+    li r0, 0
+    jeq r3, r0, '_bitcmp_done
+
+    load r5, r1
+    load r6, r2
+    xor r5, r6
+    and r5, 1
+
+    ; if equal, r5 is 0
+    or r4, r5
+
+    add r1, 1
+    add r2, 1
+    add r3, 65535 ; -1
+    jump '_bitcmp_loop
+_bitcmp_done:
+    xor r4, 1
+    mov r1, r4
+    ret
+
+
+; copy 10-bit values from 0x2000 + (7 * 7) and extend to 13-bit values at 0x3000
+copy:
+    li r1, 0 ; read offset
+    li r2, 0 ; write offset
+_copy_loop:
+    li r0, 140 ; max read
+    jeq r0, r1, '_copy_done
+
+    li r0, 8241 ; 0x2000 + (7 * 7)
+    add r0, r1
+    load r3, r0 ; read value
+    li r0, 1023 ; 0x3ff (10-bit mask)
+    and r3, r0
+
+    li r0, 12288 ; 0x3000
+    add r0, r2
+    store r3, r0 ; write value
+
+    add r1, 10
+    add r2, 13
+    jump '_copy_loop
+_copy_done:
+    ret
+
+
+mutate:
+    li r1, 0
+    li r2, 4919 ; 0x1337
+_mutate_loop:
+    li r0, 5
+    jeq r0, r1, '_mutate_done
+    push r1
+    call 'mutate_one
+    pop r1
+    add r1, 1
+    jump '_mutate_loop
+_mutate_done:
+    ret
+
+; r2: curr seed
+mutate_one:
+    li r1, 0 ; current offset
+_mutate_one_loop:
+    li r0, 182
+    jeq r0, r1, '_mutate_one_done
+
+    ; mutate single char
+    li r0, 12288
+    add r0, r1
+    load r3, r0 ; load current 13-bit value
+    mov r4, r3
+
+    and r3, 8191 ; 13-bit mask
+    and r4, 57344 ; upper 3-bit mask
+
+    ; cipher
+    xor r3, 48879 ; 0xbeef
+    add r3, r2 ; add curr
+    xor r3, 51966 ; 0xcafe
+
+    ; write back
+    and r3, 8191 ; 13-bit mask
+    or r3, r4
+    li r0, 12288
+    add r0, r1
+    store r3, r0 ; store current 13-bit value
+
+    ; update cipher
+    add r2, 17185 ; 0x4321
+    xor r2, 43690 ; 0xaaaa 
+
+    add r1, 13
+    jump '_mutate_one_loop
+_mutate_one_done:
+    ret
+
+
+; r1: a
+; r2: b
+; r3: count
+strcmp:
+_strcmp_loop:
+    li r0, 0
+    jeq r3, r0, '_strcmp_good
+
+    load r5, r1
+    and r5, 127
+    load r6, r2
+    and r6, 127
+
+    jeq r5, r6, '_strcmp_ok
+
+    li r1, 0
+    ret
+
+_strcmp_ok:
+    add r1, 7
+    add r2, 7
+    add r3, 65535
+    jump '_strcmp_loop
+
+_strcmp_good:
+    li r1, 1
+    ret
+
+welcome:
+    str '[*] Welcome to the Slice Machine!\n'
+
+empty:
+    str '...\n'
+
+enter:
+    str '[!] Please enter a flag: '
+
+checking:
+    str '[*] Checking...\n'
+
+correct:
+    str '[*] Correct!\n'
+
+wrong:
+    str '[?] Wrong!\n'
+
+prefix:
+    str 'corctf{'
+
+magic:
+    bits 10100111001100111101100110110010100001001001000001111010111010011101011100110110111101001000001110011110010000000100111001001111010010111011011010010011011001000010000111001100110000

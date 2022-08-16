@@ -1,0 +1,9 @@
+Solves: 36
+
+Author: willwam
+
+Description:
+
+msfrog
+
+Flag: `corctf{:msfrog:_is_pr0ud_0f_y0ur_l34pfr0gg1ng_4b1lit135}`

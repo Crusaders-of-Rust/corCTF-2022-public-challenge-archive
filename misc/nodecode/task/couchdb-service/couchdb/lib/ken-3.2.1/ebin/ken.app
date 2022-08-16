@@ -1,0 +1,9 @@
+{application,ken,
+             [{description,[]},
+              {vsn,"3.2.1"},
+              {registered,[]},
+              {applications,[dreyfus,kernel,stdlib,couch_log,couch_event,
+                             couch,config]},
+              {mod,{ken_app,[]}},
+              {env,[]},
+              {modules,[ken,ken_app,ken_event_handler,ken_server,ken_sup]}]}.

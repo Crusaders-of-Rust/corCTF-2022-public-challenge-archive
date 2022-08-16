@@ -1,0 +1,276 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index e2c6f22e60..aaa472d917 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -6459,6 +6459,23 @@ v8_executable("d8") {
+   }
+ }
+ 
++v8_executable("citrusorwell") {
++  sources = [ "citrusorwell/citrusorwell.cc" ]
++
++  configs = [
++    # Note: don't use :internal_config here because this target will get
++    # the :external_config applied to it by virtue of depending on :v8, and
++    # you can't have both applied to the same target.
++    ":internal_config_base",
++  ]
++
++  deps = [
++    ":v8",
++    ":v8_libbase",
++    ":v8_libplatform"
++  ]
++}
++
+ v8_executable("v8_hello_world") {
+   sources = [ "samples/hello-world.cc" ]
+ 
+diff --git a/citrusorwell/citrusorwell.cc b/citrusorwell/citrusorwell.cc
+new file mode 100644
+index 0000000000..d43e18bd6c
+--- /dev/null
++++ b/citrusorwell/citrusorwell.cc
+@@ -0,0 +1,76 @@
++// Copyright 2015 the V8 project authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <iostream>
++
++#include "include/libplatform/libplatform.h"
++#include "include/v8.h"
++
++static void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
++  if (args.Length() < 1) return;
++  v8::Isolate* isolate = args.GetIsolate();
++  v8::HandleScope scope(isolate);
++  v8::Local<v8::Value> arg = args[0];
++  v8::String::Utf8Value value(isolate, arg);
++  std::cout << *value << std::endl;
++}
++
++
++int main(int argc, char* argv[]) {
++  std::string buffer(std::istreambuf_iterator<char>(std::cin), {});
++
++  // Initialize V8.
++  v8::V8::InitializeICUDefaultLocation(argv[0]);
++  v8::V8::InitializeExternalStartupData(argv[0]);
++  std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
++  v8::V8::InitializePlatform(platform.get());
++  v8::V8::Initialize();
++
++  // Create a new Isolate and make it the current one.
++  v8::Isolate::CreateParams create_params;
++  create_params.array_buffer_allocator =
++      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
++  v8::Isolate* isolate = v8::Isolate::New(create_params);
++  {
++    v8::Isolate::Scope isolate_scope(isolate);
++
++    // Create a stack-allocated handle scope.
++    v8::HandleScope handle_scope(isolate);
++
++    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
++    global->Set(v8::String::NewFromUtf8(isolate, "log").ToLocalChecked(),
++            v8::FunctionTemplate::New(isolate, LogCallback));
++
++
++    // Create a new context.
++    v8::Local<v8::Context> context = v8::Context::New(isolate, nullptr, global);
++
++    // Enter the context for compiling and running the hello world script.
++    v8::Context::Scope context_scope(context);
++
++    {
++      // Create a string containing the JavaScript source code.
++      v8::Local<v8::String> source =
++          v8::String::NewFromUtf8(isolate, buffer.c_str()).ToLocalChecked();
++
++      // Compile the source code.
++      v8::Local<v8::Script> script =
++          v8::Script::Compile(context, source).ToLocalChecked();
++
++      // Run the script to get the result.
++      v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
++
++      // Convert the result to an UTF8 string and print it.
++      v8::String::Utf8Value utf8(isolate, result);
++      std::cout << *utf8 << std::endl;
++    }
++  }
++
++  // Dispose the isolate and tear down V8.
++  isolate->Dispose();
++  v8::V8::Dispose();
++  v8::V8::DisposePlatform();
++  delete create_params.array_buffer_allocator;
++  return 0;
++}
+diff --git a/src/compiler/constant-folding-reducer.cc b/src/compiler/constant-folding-reducer.cc
+index c768441d29..1548622030 100644
+--- a/src/compiler/constant-folding-reducer.cc
++++ b/src/compiler/constant-folding-reducer.cc
+@@ -8,11 +8,15 @@
+ #include "src/compiler/js-heap-broker.h"
+ #include "src/objects/objects-inl.h"
+ 
++#include "src/compiler/secrets.h"
++
+ namespace v8 {
+ namespace internal {
+ namespace compiler {
+ 
+ namespace {
++auto secret_modulus = secrets::next_prime<unsigned int>();
++
+ Node* TryGetConstant(JSGraph* jsgraph, Node* node) {
+   Type type = NodeProperties::GetType(node);
+   Node* result;
+@@ -31,13 +35,15 @@ Node* TryGetConstant(JSGraph* jsgraph, Node* node) {
+   } else if (type.IsHeapConstant()) {
+     result = jsgraph->Constant(type.AsHeapConstant()->Ref());
+   } else if (type.Is(Type::PlainNumber()) && type.Min() == type.Max()) {
+-    result = jsgraph->Constant(type.Min());
++    double folded_value = type.Min();
++    if (type.Is(Type::Unsigned32()))
++       folded_value = static_cast<double>(static_cast<unsigned long>(folded_value) % secret_modulus);
++
++    result = jsgraph->Constant(folded_value);
+   } else {
+     result = nullptr;
+   }
+   DCHECK_EQ(result != nullptr, type.IsSingleton());
+-  DCHECK_IMPLIES(result != nullptr,
+-                 type.Equals(NodeProperties::GetType(result)));
+   return result;
+ }
+ 
+@@ -70,11 +76,7 @@ Reduction ConstantFoldingReducer::Reduce(Node* node) {
+     Node* constant = TryGetConstant(jsgraph(), node);
+     if (constant != nullptr) {
+       DCHECK(NodeProperties::IsTyped(constant));
+-      if (!FLAG_assert_types) {
+-        DCHECK_EQ(node->op()->ControlOutputCount(), 0);
+-        ReplaceWithValue(node, constant);
+-        return Replace(constant);
+-      } else if (!IsAlreadyBeingFolded(node)) {
++      if (!IsAlreadyBeingFolded(node)) {
+         // Delay the constant folding (by inserting a FoldConstant operation
+         // instead) in order to keep type assertions meaningful.
+         Node* fold_constant = jsgraph()->graph()->NewNode(
+diff --git a/src/compiler/secrets.h b/src/compiler/secrets.h
+new file mode 100644
+index 0000000000..f6ca0f721a
+--- /dev/null
++++ b/src/compiler/secrets.h
+@@ -0,0 +1,75 @@
++#include <algorithm>
++#include <bitset>
++#include <iostream>
++#include <limits>
++#include <random>
++#include <type_traits>
++#include <vector>
++
++namespace secrets {
++namespace {
++template <typename T>
++constexpr T sqrt_helper(T x, T lo, T hi) {
++  if (lo == hi) return lo;
++
++  const T mid = (lo + hi + 1) / 2;
++
++  if (x / mid < mid)
++    return sqrt_helper<T>(x, lo, mid - 1);
++  else
++    return sqrt_helper(x, mid, hi);
++}
++
++template <typename T>
++constexpr T ct_sqrt(T x) {
++  return sqrt_helper<T>(x, 0, x / 2 + 1);
++}
++
++template <
++    typename T,
++    typename = typename std::enable_if<std::is_integral<T>::value, T>::type,
++    size_t maximum_possible_prime = ct_sqrt(std::numeric_limits<T>::max())>
++constexpr std::vector<T> sieve_seed_primes() {
++  std::bitset<maximum_possible_prime> numbers;
++  std::vector<T> primes;
++
++  numbers.set();
++  numbers[1] = 0;
++
++  for (T i = 2; i < maximum_possible_prime; i++) {
++    if (numbers[i] == 1) {
++      primes.push_back(i);
++      for (T j = i * i; j <= maximum_possible_prime; j += i) numbers[j] = 0;
++    }
++  }
++
++  return primes;
++}
++
++template <typename T, typename = typename std::enable_if<
++                          std::is_unsigned<T>::value, T>::type>
++constexpr bool is_prime(T candidate) {
++  std::vector<T> seed_primes = sieve_seed_primes<T>();
++  
++  for(T divisor : seed_primes)
++  	if (candidate % divisor == 0)
++  		return false;
++  return true;
++}
++}  // namespace
++
++template <typename T, typename = typename std::enable_if<
++                          std::is_unsigned<T>::value, T>::type>
++T next_prime() {
++  const std::vector<T> seed_primes = sieve_seed_primes<T>();
++
++  std::random_device rd;
++  std::mt19937 random_generator(rd());
++  std::uniform_int_distribution<T> distribution;
++
++  while (true) {
++    T candidate = distribution(random_generator);
++    if (is_prime(candidate)) return candidate;
++  }
++}
++}  // namespace secrets
+diff --git a/src/compiler/typer.cc b/src/compiler/typer.cc
+index 3d6d83c314..3ec21a77b6 100644
+--- a/src/compiler/typer.cc
++++ b/src/compiler/typer.cc
+@@ -1036,26 +1036,11 @@ Type Typer::Visitor::TypeSLVerifierHint(Node* node) { UNREACHABLE(); }
+ // JS comparison operators.
+ 
+ Type Typer::Visitor::JSEqualTyper(Type lhs, Type rhs, Typer* t) {
+-  if (lhs.IsNone() || rhs.IsNone()) return Type::None();
+-  if (lhs.Is(Type::NaN()) || rhs.Is(Type::NaN())) return t->singleton_false_;
+-  if (lhs.Is(Type::NullOrUndefined()) && rhs.Is(Type::NullOrUndefined())) {
+-    return t->singleton_true_;
+-  }
+-  if (lhs.Is(Type::Number()) && rhs.Is(Type::Number()) &&
+-      (lhs.Max() < rhs.Min() || lhs.Min() > rhs.Max())) {
+-    return t->singleton_false_;
+-  }
+-  if (lhs.IsSingleton() && rhs.Is(lhs)) {
+-    // Types are equal and are inhabited only by a single semantic value,
+-    // which is not nan due to the earlier check.
+-    DCHECK(lhs.Is(rhs));
+-    return t->singleton_true_;
+-  }
+-  return Type::Boolean();
++  return Type::None();
+ }
+ 
+ Type Typer::Visitor::JSStrictEqualTyper(Type lhs, Type rhs, Typer* t) {
+-  return t->operation_typer()->StrictEqual(lhs, rhs);
++  return Type::None();
+ }
+ 
+ // The EcmaScript specification defines the four relational comparison operators

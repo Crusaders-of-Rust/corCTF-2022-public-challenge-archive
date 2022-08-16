@@ -1,0 +1,9 @@
+[Unit]
+Description=Initialize challenge
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/init
+
+[Install]
+WantedBy=multi-user.target

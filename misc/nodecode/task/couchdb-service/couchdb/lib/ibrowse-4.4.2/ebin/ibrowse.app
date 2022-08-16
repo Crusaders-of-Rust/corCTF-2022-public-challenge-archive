@@ -1,0 +1,12 @@
+{application,ibrowse,
+             [{description,"Erlang HTTP client application"},
+              {vsn,"4.4.2"},
+              {registered,[ibrowse_sup,ibrowse]},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {mod,{ibrowse_app,[]}},
+              {maintainers,["Chandrashekhar Mullaparthi"]},
+              {licenses,["GPLv2","BSD"]},
+              {modules,[ibrowse,ibrowse_app,ibrowse_http_client,ibrowse_lb,
+                        ibrowse_lib,ibrowse_socks5,ibrowse_sup]},
+              {links,[{"Github","https://github.com/cmullaparthi/ibrowse"}]}]}.

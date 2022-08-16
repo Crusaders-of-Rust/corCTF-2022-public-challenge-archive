@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.2fd2f72f.css",
+    "main.js": "/static/js/main.88f9e0db.js",
+    "static/media/msfrog.png": "/static/media/msfrog.9ac052bf29e68a61d704.png",
+    "index.html": "/index.html",
+    "main.2fd2f72f.css.map": "/static/css/main.2fd2f72f.css.map",
+    "main.88f9e0db.js.map": "/static/js/main.88f9e0db.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.2fd2f72f.css",
+    "static/js/main.88f9e0db.js"
+  ]
+}
